@@ -1,12 +1,12 @@
 <script setup>
 import { computed, onMounted, onUnmounted, watch } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import { useRouter } from 'vue-router'
 import { useMainStore } from './stores/mainStore'
 import { listen } from '@tauri-apps/api/event'
+import { invoke } from '@tauri-apps/api/core'
 import { useTheme } from 'vuetify'
 
 const router = useRouter()
-const route = useRoute()
 const store = useMainStore()
 const vuetifyTheme = useTheme()
 
@@ -59,12 +59,32 @@ const activeTab = computed(() => {
 })
 
 const isNotificationWindow = computed(() => {
-  return route.path === '/notification'
+  // router の初期化を待たずに判定できるよう、URLを直接確認
+  return window.location.hash.includes('notification') || window.location.pathname.includes('notification')
 })
 
 const navigate = (tab) => {
   if (tab === 'home') router.push('/')
   else router.push('/settings')
+}
+
+const openRepoFolder = async () => {
+  const path = store.settings.repo_save_path
+  if (path) {
+    try {
+      await invoke('open_path_in_explorer', { path })
+    } catch (e) {
+      console.error("フォルダを開けませんでした:", e)
+    }
+  }
+}
+
+const openBackupsFolder = async () => {
+  try {
+    await invoke('open_backups_folder')
+  } catch (e) {
+    console.error("バックアップフォルダを開けませんでした:", e)
+  }
 }
 </script>
 
@@ -76,26 +96,61 @@ const navigate = (tab) => {
       color="surface"
     >
       <v-list>
-        <v-list-item
-          prepend-icon="mdi-backup-restore"
-          title="バックアップリスト"
-          value="backups"
-          to="/"
-        ></v-list-item>
-        <v-list-item
-          prepend-icon="mdi-cog"
-          title="設定"
-          value="settings"
-          to="/settings"
-        ></v-list-item>
+        <v-tooltip text="バックアップリスト" location="right">
+          <template v-slot:activator="{ props }">
+            <v-list-item
+              v-bind="props"
+              prepend-icon="mdi-backup-restore"
+              title="バックアップリスト"
+              value="backups"
+              to="/"
+            ></v-list-item>
+          </template>
+        </v-tooltip>
+
+        <v-tooltip text="設定" location="right">
+          <template v-slot:activator="{ props }">
+            <v-list-item
+              v-bind="props"
+              prepend-icon="mdi-cog"
+              title="設定"
+              value="settings"
+              to="/settings"
+            ></v-list-item>
+          </template>
+        </v-tooltip>
       </v-list>
+
+      <template v-slot:append>
+        <div class="pa-2 d-flex flex-column align-center gap-2">
+            <v-tooltip text="監視フォルダを開く" location="right">
+                <template v-slot:activator="{ props }">
+                    <v-btn
+                        v-bind="props"
+                        icon="mdi-folder-open"
+                        variant="text"
+                        @click="openRepoFolder"
+                    ></v-btn>
+                </template>
+            </v-tooltip>
+
+            <v-tooltip text="バックアップフォルダを開く" location="right">
+                <template v-slot:activator="{ props }">
+                    <v-btn
+                        v-bind="props"
+                        icon="mdi-folder-clock"
+                        variant="text"
+                        @click="openBackupsFolder"
+                    ></v-btn>
+                </template>
+            </v-tooltip>
+        </div>
+      </template>
     </v-navigation-drawer>
 
     <v-main>
       <router-view v-slot="{ Component }">
-        <keep-alive>
           <component :is="Component" />
-        </keep-alive>
       </router-view>
     </v-main>
   </v-app>

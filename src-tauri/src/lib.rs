@@ -103,13 +103,29 @@ fn delete_subfolder(app: tauri::AppHandle, subfolder_name: String) {
 #[tauri::command]
 fn save_memo(app: tauri::AppHandle, subfolder_name: String, memo_content: String) {
     // サブフォルダ（カテゴリ）ごとのメモを meta.json に保存する
-    // 引数 memo_content: ユーザーが入力した任意のテキスト
     let exe_path = std::env::current_exe().unwrap_or_default();
     let backups_root = exe_path.parent().unwrap().join("Backups");
 
     BackupSystem::save_memo(&backups_root, &subfolder_name, &memo_content);
     // 保存後、UIを即座に更新するために状態を再送
     BackupSystem::emit_state(&app, &backups_root);
+}
+
+#[tauri::command]
+fn open_path_in_explorer(app: tauri::AppHandle, path: String) {
+    use tauri_plugin_opener::OpenerExt;
+    let _ = app.opener().open_path(path, None::<&str>);
+}
+
+/// バックアップルートフォルダをエクスプローラで開きます。
+#[tauri::command]
+fn open_backups_folder(app: tauri::AppHandle) {
+    use tauri_plugin_opener::OpenerExt;
+    let exe_path = std::env::current_exe().unwrap_or_default();
+    let backups_root = exe_path.parent().unwrap().join("Backups");
+    let _ = app
+        .opener()
+        .open_path(backups_root.to_string_lossy().to_string(), None::<&str>);
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -123,6 +139,7 @@ pub fn run() {
                 let _ = window.set_focus();
             }
         }))
+        .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
             // アプリのバージョン情報を取得してウィンドウタイトルに反映
             let package_info = app.package_info();
@@ -244,7 +261,6 @@ pub fn run() {
                 api.prevent_close();
             }
         })
-        .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
             initialize_app,
             save_settings,
@@ -252,7 +268,9 @@ pub fn run() {
             restore_backup,
             delete_backup,
             delete_subfolder,
-            save_memo
+            save_memo,
+            open_path_in_explorer,
+            open_backups_folder
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

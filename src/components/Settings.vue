@@ -1,6 +1,7 @@
 <script setup>
 import { ref, watch } from 'vue'
 import { useMainStore } from '../stores/mainStore'
+import { open as openDialog } from '@tauri-apps/plugin-dialog'
 
 const store = useMainStore()
 
@@ -45,6 +46,20 @@ const onMaxGenerationsInput = () => {
 const onThemeChange = (newTheme) => {
   store.saveSettings(localPath.value, maxGenerations.value, newTheme)
 }
+
+const selectFolder = async () => {
+  const selected = await openDialog({
+    directory: true,
+    multiple: false,
+    defaultPath: localPath.value,
+    title: 'セーブデータフォルダを選択'
+  })
+  if (selected) {
+    localPath.value = selected
+    // 直接保存を発火
+    store.saveSettings(localPath.value, maxGenerations.value, theme.value)
+  }
+}
 </script>
 
 <template>
@@ -65,7 +80,17 @@ const onThemeChange = (newTheme) => {
              prepend-inner-icon="mdi-folder-open"
              variant="outlined"
              color="primary"
-           ></v-text-field>
+           >
+             <template v-slot:append-inner>
+               <v-btn
+                 icon="mdi-folder-search-outline"
+                 variant="text"
+                 size="small"
+                 @click="selectFolder"
+                 title="フォルダを選択"
+               ></v-btn>
+             </template>
+           </v-text-field>
         </v-card>
 
         <v-card variant="elevated" elevation="1" class="pa-4 rounded-lg mb-4">

@@ -119,8 +119,15 @@ const confirmDelete = async () => {
                     <v-icon color="primary" class="mr-1" size="medium">mdi-folder</v-icon>
                 </template>
                 
-                <v-card-title class="d-flex align-center text-body-1">
-                    {{ item.name }}
+                <v-card-title class="d-flex flex-column align-start text-body-1 py-1">
+                    <div class="font-weight-bold">{{ item.name }}</div>
+                    <div class="text-caption text-medium-emphasis mt-n1">
+                        <v-icon size="x-small" class="mr-1">mdi-clock-outline</v-icon>
+                        <span v-if="item.backups && item.backups.length > 0">
+                            最新: {{ formatDate(item.backups[0].timestamp) }}
+                        </span>
+                        <span v-else>バックアップ履歴なし</span>
+                    </div>
                 </v-card-title>
                 
                 <!-- メモとアクション -->

@@ -70,7 +70,7 @@ onMounted(async () => {
           console.log('[NOTIFICATION OVERLAY] ウィンドウを隠します')
           await win.hide()
       }, 300) 
-    }, 3000)
+    }, 5000)
   })
   console.log('[NOTIFICATION OVERLAY] Event listener registered successfully')
 })
