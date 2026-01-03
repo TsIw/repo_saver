@@ -1,0 +1,25 @@
+/* Global styles cleared for Vuetify migration */
+/* We can keep scrollbar styling if we want, Vuetify might not handle that by default on Windows */
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #555;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #777;
+}
+
+html,
+body {
+  /* overflow: hidden; 削除済み */
+  /* App-like feel */
+}
