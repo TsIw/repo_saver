@@ -1,6 +1,6 @@
 [package]
 name = "repo_saver"
-version = "1.1.0"
+version = "1.1.1"
 description = "A Tauri App"
 authors = ["T"]
 edition = "2021"

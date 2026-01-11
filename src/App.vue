@@ -5,6 +5,7 @@ import { useMainStore } from './stores/mainStore'
 import { listen } from '@tauri-apps/api/event'
 import { invoke } from '@tauri-apps/api/core'
 import { useTheme } from 'vuetify'
+import { getCurrentWindow } from '@tauri-apps/api/window'
 
 const router = useRouter()
 const store = useMainStore()
@@ -59,8 +60,12 @@ const activeTab = computed(() => {
 })
 
 const isNotificationWindow = computed(() => {
-  // router の初期化を待たずに判定できるよう、URLを直接確認
-  return window.location.hash.includes('notification') || window.location.pathname.includes('notification')
+  const label = getCurrentWindow().label
+  const isNotification = label === 'notification' || window.location.hash.includes('notification')
+  if (isNotification) {
+      console.log(`[APP] Window Type: NOTIFICATION (label: ${label})`)
+  }
+  return isNotification
 })
 
 const navigate = (tab) => {
@@ -89,36 +94,36 @@ const openBackupsFolder = async () => {
 </script>
 
 <template>
-  <v-app v-if="!isNotificationWindow">
+  <!-- 通知ウィンドウの場合は、メインウィンドウ用のレイアウト（サイドバー等）を一切描画しません -->
+  <template v-if="isNotificationWindow">
+    <router-view />
+  </template>
+
+  <!-- メインウィンドウの場合のみ、サイドバーと全体のレイアウトを描画します -->
+  <v-app v-else>
     <v-navigation-drawer
       permanent
       rail
       color="surface"
     >
       <v-list>
-        <v-tooltip text="バックアップリスト" location="right">
-          <template v-slot:activator="{ props }">
-            <v-list-item
-              v-bind="props"
-              prepend-icon="mdi-backup-restore"
-              title="バックアップリスト"
-              value="backups"
-              to="/"
-            ></v-list-item>
-          </template>
-        </v-tooltip>
+        <v-list-item
+          prepend-icon="mdi-backup-restore"
+          title="バックアップリスト"
+          value="backups"
+          to="/"
+        >
+          <v-tooltip activator="parent" text="バックアップリスト" location="right"></v-tooltip>
+        </v-list-item>
 
-        <v-tooltip text="設定" location="right">
-          <template v-slot:activator="{ props }">
-            <v-list-item
-              v-bind="props"
-              prepend-icon="mdi-cog"
-              title="設定"
-              value="settings"
-              to="/settings"
-            ></v-list-item>
-          </template>
-        </v-tooltip>
+        <v-list-item
+          prepend-icon="mdi-cog"
+          title="設定"
+          value="settings"
+          to="/settings"
+        >
+          <v-tooltip activator="parent" text="設定" location="right"></v-tooltip>
+        </v-list-item>
       </v-list>
 
       <template v-slot:append>
@@ -154,7 +159,6 @@ const openBackupsFolder = async () => {
       </router-view>
     </v-main>
   </v-app>
-  <router-view v-else />
 </template>
 
 <style scoped>

@@ -111,6 +111,14 @@ fn save_memo(app: tauri::AppHandle, subfolder_name: String, memo_content: String
     BackupSystem::emit_state(&app, &backups_root);
 }
 
+#[cfg(debug_assertions)]
+#[tauri::command]
+fn test_notification(app: tauri::AppHandle) {
+    println!("[DEBUG COMMAND] test_notification called");
+    // 開発時のデバッグ用コマンド。実際のバックアップ生成時と同じ流れで通知を表示します。
+    BackupSystem::send_notification(&app, "テスト通知", "これはデバッグ用のテスト通知です。");
+}
+
 #[tauri::command]
 fn open_path_in_explorer(app: tauri::AppHandle, path: String) {
     use tauri_plugin_opener::OpenerExt;
@@ -270,7 +278,9 @@ pub fn run() {
             delete_subfolder,
             save_memo,
             open_path_in_explorer,
-            open_backups_folder
+            open_backups_folder,
+            #[cfg(debug_assertions)]
+            test_notification
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

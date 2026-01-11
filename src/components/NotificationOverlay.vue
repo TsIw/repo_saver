@@ -34,7 +34,7 @@ const typeColor = computed(() => {
 })
 
 onMounted(async () => {
-  console.log('[NOTIFICATION OVERLAY] Component mounted')
+  console.log('[NOTIFICATION OVERLAY] Component mounted, URL:', window.location.href)
   document.body.style.backgroundColor = 'transparent'
   document.documentElement.style.backgroundColor = 'transparent'
 
@@ -42,11 +42,9 @@ onMounted(async () => {
   // ここでの再配置は不要です
 
   // Rustからの 'show-notification' イベントをリッスン
-  console.log('[NOTIFICATION OVERLAY] show-notification イベントの待受を開始します')
   await listen('show-notification', async (event) => {
     console.log('[NOTIFICATION OVERLAY] 通知イベントを受信:', event)
     const payload = event.payload
-    console.log('[NOTIFICATION OVERLAY] Payload:', payload)
     
     title.value = payload.title
     message.value = payload.body
@@ -54,25 +52,19 @@ onMounted(async () => {
     
     // UI上のカードを表示状態にする
     visible.value = true
-    console.log('[NOTIFICATION OVERLAY] 通知を表示状態に設定しました')
     
     // ウィンドウ自体も不可視状態(visible: false)で作成されているため、OSに対して「表示」を要求
     const win = getCurrentWindow()
-    console.log('[NOTIFICATION OVERLAY] ウィンドウを表示します')
     await win.show()
-    console.log('[NOTIFICATION OVERLAY] ウィンドウが表示されました')
 
     if (timer) clearTimeout(timer)
     timer = setTimeout(async () => {
-      console.log('[NOTIFICATION OVERLAY] 通知を自動非表示にします')
       visible.value = false
       setTimeout(async () => {
-          console.log('[NOTIFICATION OVERLAY] ウィンドウを隠します')
           await win.hide()
       }, 300) 
     }, 5000)
   })
-  console.log('[NOTIFICATION OVERLAY] Event listener registered successfully')
 })
 </script>
 

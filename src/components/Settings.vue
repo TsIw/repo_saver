@@ -2,6 +2,7 @@
 import { ref, watch } from 'vue'
 import { useMainStore } from '../stores/mainStore'
 import { open as openDialog } from '@tauri-apps/plugin-dialog'
+import { invoke } from '@tauri-apps/api/core'
 
 const store = useMainStore()
 
@@ -10,6 +11,8 @@ const maxGenerations = ref(10)
 const theme = ref('system')
 let pathTimer = null
 let generationsTimer = null
+
+const isDebug = import.meta.env.DEV
 
 watch(() => store.settings.repo_save_path, (newVal) => {
   localPath.value = newVal
@@ -58,6 +61,16 @@ const selectFolder = async () => {
     localPath.value = selected
     // 直接保存を発火
     store.saveSettings(localPath.value, maxGenerations.value, theme.value)
+  }
+}
+
+const sendTestNotification = async () => {
+  console.log('[SETTINGS] sendTestNotification clicked')
+  try {
+    await invoke('test_notification')
+    console.log('[SETTINGS] invoke(test_notification) success')
+  } catch (e) {
+    console.error("テスト通知の送信に失敗しました:", e)
   }
 }
 </script>
@@ -111,13 +124,26 @@ const selectFolder = async () => {
           ></v-text-field>
         </v-card>
 
-        <v-card variant="elevated" elevation="1" class="pa-4 rounded-lg mb-4">
+        <v-card variant="elevated" elevation="1" class="pa-4 rounded-lg">
           <div class="text-subtitle-1 mb-3 font-weight-bold">テーマ設定</div>
           <v-radio-group v-model="theme" @update:model-value="onThemeChange">
             <v-radio label="ダークモード" value="dark"></v-radio>
             <v-radio label="ライトモード" value="light"></v-radio>
             <v-radio label="システム設定に従う" value="system"></v-radio>
           </v-radio-group>
+        </v-card>
+
+        <!-- デバッグビルド時のみ表示されるツール -->
+        <v-card v-if="isDebug" variant="outlined" class="pa-4 rounded-lg border-dashed mt-4">
+          <div class="text-subtitle-1 mb-3 font-weight-bold color-error">デバッグ・ツール</div>
+          <v-btn
+            color="secondary"
+            prepend-icon="mdi-bell-ring"
+            @click="sendTestNotification"
+            block
+          >
+            テスト通知を送信
+          </v-btn>
         </v-card>
 
       </v-col>

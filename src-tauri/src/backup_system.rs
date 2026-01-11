@@ -437,25 +437,15 @@ impl BackupSystem {
                     let name = entry.file_name().to_string_lossy().to_string();
 
                     if !results.contains_key(&name) {
-                        // Should we auto-backup? User said "If no backup... auto create".
-                        // BUT we are inside get_all_state which is called by emit_state.
-                        // emit_state is called by initialize_app.
-                        // If we trigger backup here, it might be recursive or blocking.
-                        // Better to just show it as empty for now, OR trigger a background backup?
-                        // "Display non-backed-up folders" -> Done by adding to list.
-                        // "Auto create backup on startup if none" -> Can we do this?
-                        // Let's just add to list for now. The watcher will pick up changes.
-                        // To force backup, we might need manual trigger.
-                        // User said "Auto create... and display".
-                        // Let's leave it as display with 0 backups.
-
+                        // バックアップがまだ存在しないフォルダもリストに含めることで、
+                        // ユーザーが手動バックアップを実行したり、監視の存在を認識したりできるようにします。
                         results.insert(
                             name.clone(),
                             SubFolderState {
                                 name: name.clone(),
                                 memo: String::new(),
                                 backups: Vec::new(),
-                                source_exists: true, // Repo スキャンで見つかったので存在している
+                                source_exists: true,
                             },
                         );
                     }
@@ -470,12 +460,7 @@ impl BackupSystem {
 
     pub fn save_memo(backups_root: &Path, subfolder: &str, memo: &str) {
         let folder_path = backups_root.join(subfolder);
-        if !folder_path.exists() {
-            return;
-        } // 作成すべきか？ バックアップが先ではないか？
-          // 要件: 「サブフォルダのメモを保存」。バックアップ内にフォルダが存在すると仮定。
-          // バックアップがまだない場合、フォルダがない可能性がある。
-          // メモを保存するためにフォルダを作成しても安全。
+        // バックアップがまだない場合でもメモを保持できるよう、親ディレクトリを作成します。
         let _ = fs::create_dir_all(&folder_path);
 
         let meta_path = folder_path.join("meta.json");
@@ -573,7 +558,7 @@ impl BackupSystem {
         Self::emit_state(&self.app_handle, &backups_root);
     }
 
-    fn send_notification(app: &AppHandle, title: &str, body: &str) {
+    pub fn send_notification(app: &AppHandle, title: &str, body: &str) {
         println!("[NOTIFICATION] 通知を送信中: {} - {}", title, body);
         // 通知ウィンドウにイベントを送信
         // ペイロード: { title, body, type } - 現在は簡略化
@@ -593,16 +578,8 @@ impl BackupSystem {
             "body": body,
             "type": type_str
         });
-
-        println!("[NOTIFICATION] Payload: {:?}", payload);
-
-        match app.emit("show-notification", payload) {
-            Ok(_) => println!("[NOTIFICATION] イベントが正常に送信されました"),
-            Err(e) => eprintln!("[NOTIFICATION] イベントの送信に失敗しました: {:?}", e),
-        }
-
-        // ウィンドウが表示されていることを確認（フロントエンドで処理されるが、フォーカスが必要？）
-        // 実際にはフロントエンドが window.show() を呼び出す。Rust は emit するだけ。
-        // 注意: ウィンドウが非表示でもイベントを受信できるか？ はい。
+        // Tauri v2 の AppHandle.emit は、デフォルトで全ウィンドウにブロードキャストされます。
+        // 個別ウィンドウへの emit を併用すると重複受信の原因となるため、全体放送のみを行います。
+        let _ = app.emit("show-notification", payload);
     }
 }

@@ -21,6 +21,27 @@ Windowsの「設定 > アプリ」から「RepoSaver」をアンインストー�
 
 ※本ツールは生成AI技術を用いて開発されており、動作上の不安定などがある可能性があります。
 
+## デバッグ起動コマンド
+```powershell
+npm run tauri dev
+```
+
+## クリーンコマンド
+```powershell
+npm run tauri clean
+```
+
+## リリースビルドコマンド
+```powershell
+npm run tauri build
+```
+
+## バージョン情報更新方法
+以下の3ファイルの `version` 表記をすべて更新してください。
+1. /package.json
+2. /src-tauri/tauri.conf.json
+3. /src-tauri/Cargo.toml
+
 ## 免責事項
 本ツールを使用して発生したいかなる損害に対しても責任を負いかねます。
 
